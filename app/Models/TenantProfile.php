@@ -27,6 +27,7 @@ class TenantProfile extends Model
         'address',
         'rent_commencement_date',
         'rent_expiry_date',
+        'wallet_balance',
     ];
 
     public function user()

@@ -55,6 +55,9 @@ class DatabaseSeeder extends Seeder
             'description' => 'Top floor luxury penthouse.'
         ]);
 
+        // Create Super Admin (Global, no company)
+        User::create(['name' => 'Super Admin', 'email' => 'super@finehouse.test', 'password' => bcrypt('password'), 'role' => 'super_admin']);
+
         // Create Admin
         User::create(['name' => 'Admin User', 'email' => 'admin@finehouse.test', 'password' => bcrypt('password'), 'role' => 'admin', 'company_id' => $company->id]);
         
@@ -71,6 +74,68 @@ class DatabaseSeeder extends Seeder
         User::create(['name' => 'President Charlie', 'email' => 'president@finehouse.test', 'password' => bcrypt('password'), 'role' => 'lodge_president', 'company_id' => $company->id, 'property_id' => $propertyA->id]);
 
         // Create Tenant
-        User::create(['name' => 'Tenant Tom', 'email' => 'tenant@finehouse.test', 'password' => bcrypt('password'), 'role' => 'tenant']);
+        $tenantUser = User::create(['name' => 'Tenant Tom', 'email' => 'tenant@finehouse.test', 'password' => bcrypt('password'), 'role' => 'tenant']);
+
+        // Create Tenant Profile
+        \App\Models\TenantProfile::create([
+            'user_id' => $tenantUser->id,
+            'phone_number' => '+1987654321',
+            'gender' => 'male',
+            'dob' => '1995-05-15',
+            'religion' => 'Christian',
+            'state_of_origin' => 'California',
+            'lga' => 'Los Angeles',
+            'address' => '789 Hope St, LA',
+            'type' => 'student',
+            'university' => 'Stanford University',
+            'matric_number' => 'STU-2024-001',
+            'level' => '400',
+            'department' => 'Computer Science',
+            'faculty' => 'Engineering',
+            'course' => 'Software Engineering',
+            'next_of_kin' => 'Jane Tom',
+            'next_of_kin_phone' => '+1000999888',
+            'rent_commencement_date' => now()->startOfMonth(),
+            'rent_expiry_date' => now()->startOfMonth()->addYear()->subDay(),
+        ]);
+
+        // Create Booking
+        $booking = \App\Models\Booking::create([
+            'user_id' => $tenantUser->id,
+            'room_id' => $room1->id,
+            'status' => 'confirmed',
+            'interview_date' => now()->addDays(2),
+            'interview_location' => 'Finehouse Headquarters',
+        ]);
+
+        // Mark room as occupied
+        $room1->update(['is_available' => false]);
+
+        // Create Payment
+        \App\Models\Payment::create([
+            'user_id' => $tenantUser->id,
+            'property_id' => $propertyA->id,
+            'room_id' => $room1->id,
+            'amount' => 500,
+            'status' => 'verified',
+            'verified_by' => 1, // First admin
+        ]);
+
+        // Create Maintenance Request
+        \App\Models\MaintenanceRequest::create([
+            'user_id' => $tenantUser->id,
+            'property_id' => $propertyA->id,
+            'room_id' => $room1->id,
+            'issue_description' => 'The kitchen faucet is leaking since yesterday.',
+            'status' => 'pending',
+        ]);
+
+        // Create Announcement
+        \App\Models\Announcement::create([
+            'user_id' => 1, // First admin
+            'property_id' => $propertyA->id,
+            'title' => 'Scheduled Maintenance',
+            'message' => 'Water supply will be temporarily cut off on Saturday from 10 AM to 2 PM for pipe repairs.',
+        ]);
     }
 }

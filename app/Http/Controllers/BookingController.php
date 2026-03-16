@@ -9,23 +9,36 @@ use Illuminate\Support\Facades\Auth;
 
 class BookingController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $user = Auth::user();
+        $search = $request->input('search');
+
+        $query = Booking::with(['room.property', 'user']);
+
         if ($user->role === 'tenant') {
-            $bookings = Booking::with('room.property')->where('user_id', $user->id)->get();
-        } else {
-            // Basic view for admin/landlord to see bookings. For Phase 4 focus on Tenant flow mostly.
-            // But we'll query all bookings for their properties.
-            $propertyIds = $user->company->properties->pluck('id')->toArray();
-            $roomIds = Room::whereIn('property_id', $propertyIds)->pluck('id')->toArray();
-            $bookings = Booking::with('room.property', 'user')->whereIn('room_id', $roomIds)->get();
+            $query->where(function($q) use ($user) { $q->where('user_id', $user->id); });
         }
 
-        return view('booking.index', compact('bookings'));
+        if ($search) {
+            $query->where(function($q) use ($search) {
+                $q->where('status', 'like', "%{$search}%")
+                  ->orWhereHas('user', function($qu) use ($search) {
+                      $qu->where('name', 'like', "%{$search}%");
+                  })
+                  ->orWhereHas('room', function($qr) use ($search) {
+                      $qr->where('room_number', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        $bookings = $query->latest()->paginate(10)->withQueryString();
+        $rooms = Room::all();
+
+        return view('booking.index', compact('bookings', 'rooms'));
     }
 
-    public function create(Room $room)
+    public function create(Room $room = null)
     {
         if (Auth::user()->role !== 'tenant') {
             abort(403);
@@ -38,25 +51,30 @@ class BookingController extends Controller
         return view('booking.create', compact('room'));
     }
 
-    public function store(Request $request, Room $room)
+    public function storeGeneral(Request $request)
+    {
+        return $this->store($request);
+    }
+
+    public function store(Request $request, Room $room = null)
     {
         if (Auth::user()->role !== 'tenant') {
             abort(403);
         }
 
         $request->validate([
-            'interview_date' => 'required|date|after:today',
             'interview_type' => 'required|in:online,offline',
             'interview_location' => 'nullable|string',
         ]);
 
         Booking::create([
             'user_id' => Auth::id(),
-            'room_id' => $room->id,
+            'room_id' => $room->id ?? null,
             'status' => 'pending',
-            'interview_date' => $request->interview_date,
+            'interview_type' => $request->interview_type,
+            'interview_date' => null,
             'interview_location' => $request->interview_type === 'offline' ? $request->interview_location : null,
-            'interview_link' => $request->interview_type === 'online' ? 'To be provided by admin' : null,
+            'interview_link' => null,
         ]);
 
         return redirect()->route('bookings.index')->with('success', 'Interview booked successfully. Await confirmation.');
@@ -70,17 +88,43 @@ class BookingController extends Controller
         }
 
         $request->validate([
-            'status' => 'required|in:pending,approved,rejected',
+            'status' => 'required|in:pending,scheduled,granted,confirmed,rejected',
+            'room_id' => 'nullable|exists:rooms,id',
+            'interview_date' => 'nullable|date',
             'interview_link' => 'nullable|string',
             'interview_location' => 'nullable|string',
         ]);
 
-        $booking->update([
+        $data = [
             'status' => $request->status,
-            'interview_link' => $request->interview_link ?? $booking->interview_link,
-            'interview_location' => $request->interview_location ?? $booking->interview_location,
-        ]);
+        ];
 
-        return redirect()->route('bookings.index')->with('success', 'Booking updated successfully.');
+        if ($request->has('interview_date')) {
+            $data['interview_date'] = $request->interview_date;
+        }
+        if ($request->has('interview_link')) {
+            $data['interview_link'] = $request->interview_link;
+        }
+        if ($request->has('interview_location')) {
+            $data['interview_location'] = $request->interview_location;
+        }
+        if ($request->has('room_id')) {
+            $data['room_id'] = $request->room_id;
+        }
+
+        $booking->update($data);
+
+        $message = 'Booking updated successfully.';
+        if ($request->status === 'scheduled') {
+            $message = 'Interview scheduled successfully.';
+        }
+        if ($request->status === 'granted') {
+            $message = 'Interview granted! You can now assign a room.';
+        }
+        if ($request->status === 'confirmed') {
+            $message = 'Room assigned and booking confirmed.';
+        }
+
+        return redirect()->route('bookings.index')->with('success', $message);
     }
 }

@@ -13,6 +13,7 @@ class MaintenanceRequest extends Model
         'issue_description',
         'image_path',
         'status',
+        'cost',
     ];
 
     public function user()

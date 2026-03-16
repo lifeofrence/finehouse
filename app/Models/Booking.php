@@ -10,6 +10,7 @@ class Booking extends Model
         'user_id',
         'room_id',
         'status',
+        'interview_type',
         'interview_date',
         'interview_location',
         'interview_link',

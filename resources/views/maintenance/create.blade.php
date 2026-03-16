@@ -33,7 +33,7 @@
                         </div>
 
                         <div class="flex items-center justify-end mt-4">
-                            <x-primary-button class="ms-4 bg-red-600 hover:bg-red-700">
+                            <x-primary-button class="ms-4 bg-indigo-600 hover:bg-indigo-700">
                                 {{ __('Submit Incident Report') }}
                             </x-primary-button>
                         </div>

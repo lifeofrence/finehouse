@@ -9,6 +9,7 @@ class Announcement extends Model
     protected $fillable = [
         'user_id',
         'property_id',
+        'target_user_id',
         'title',
         'message',
     ];
@@ -16,6 +17,11 @@ class Announcement extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function targetUser()
+    {
+        return $this->belongsTo(User::class, 'target_user_id');
     }
 
     public function property()

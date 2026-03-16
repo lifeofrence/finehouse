@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Room extends Model
 {
+    use \App\Traits\LogsCompanyActivity;
     protected $fillable = [
         'property_id',
         'room_number',

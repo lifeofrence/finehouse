@@ -10,7 +10,7 @@ use Illuminate\Notifications\Notifiable;
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, \App\Traits\LogsCompanyActivity;
 
     /**
      * The attributes that are mass assignable.
@@ -26,22 +26,22 @@ class User extends Authenticatable
         'property_id',
     ];
 
-    public function company()
+    public function company(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(Company::class);
     }
 
-    public function property()
+    public function property(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(Property::class);
     }
 
-    public function tenantProfile()
+    public function tenantProfile(): \Illuminate\Database\Eloquent\Relations\HasOne
     {
         return $this->hasOne(TenantProfile::class);
     }
 
-    public function bookings()
+    public function bookings(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(Booking::class);
     }

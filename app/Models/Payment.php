@@ -11,10 +11,16 @@ class Payment extends Model
         'property_id',
         'room_id',
         'amount',
+        'reference',
+        'payment_period',
         'status',
         'is_external',
         'external_proof_path',
         'verified_by',
+    ];
+
+    protected $casts = [
+        'payment_period' => 'date',
     ];
 
     public function user()

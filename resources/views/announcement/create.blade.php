@@ -12,9 +12,23 @@
                     <form method="POST" action="{{ route('announcements.store') }}">
                         @csrf
 
-                        <div class="mb-4">
-                            <x-input-label for="property_id" :value="__('Select Property')" />
-                            <select id="property_id" name="property_id" class="block mt-1 w-full border-gray-300 focus:border-indigo-500 rounded-md shadow-sm" required>
+                        <div class="mb-6">
+                            <x-input-label for="target_type" :value="__('Who is this announcement for?')" />
+                            <div class="flex gap-4 mt-2">
+                                <label class="flex items-center gap-2 cursor-pointer group">
+                                    <input type="radio" name="target_type" value="property" checked onchange="toggleTarget(this.value)" class="text-indigo-600 focus:ring-indigo-500 border-gray-300">
+                                    <span class="text-sm font-bold text-gray-700 group-hover:text-indigo-600 transition-colors">Entire Property</span>
+                                </label>
+                                <label class="flex items-center gap-2 cursor-pointer group">
+                                    <input type="radio" name="target_type" value="individual" onchange="toggleTarget(this.value)" class="text-indigo-600 focus:ring-indigo-500 border-gray-300">
+                                    <span class="text-sm font-bold text-gray-700 group-hover:text-indigo-600 transition-colors">Specific Individual</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div id="property-group" class="mb-4">
+                            <x-input-label for="property_id" :value="__('Target Property')" />
+                            <select id="property_id" name="property_id" class="block mt-1 w-full border-gray-300 focus:border-indigo-500 rounded-md shadow-sm">
                                 <option value="" disabled selected>Select a property...</option>
                                 @foreach($properties as $property)
                                     <option value="{{ $property->id }}">{{ $property->name }}</option>
@@ -22,6 +36,28 @@
                             </select>
                             <x-input-error :messages="$errors->get('property_id')" class="mt-2" />
                         </div>
+
+                        <div id="individual-group" class="mb-4 hidden">
+                            <x-input-label for="target_user_id" :value="__('Target Individual')" />
+                            <select id="target_user_id" name="target_user_id" class="block mt-1 w-full border-gray-300 focus:border-indigo-500 rounded-md shadow-sm">
+                                <option value="" disabled selected>Select a tenant...</option>
+                                @foreach($users as $user)
+                                    <option value="{{ $user->id }}">{{ $user->name }} ({{ $user->email }})</option>
+                                @endforeach
+                            </select>
+                            <x-input-error :messages="$errors->get('target_user_id')" class="mt-2" />
+                        </div>
+
+                        <script>
+                            function toggleTarget(val) {
+                                document.getElementById('property-group').classList.toggle('hidden', val !== 'property');
+                                document.getElementById('individual-group').classList.toggle('hidden', val !== 'individual');
+                                
+                                // Manage required state potentially, though backend handles it
+                                document.getElementById('property_id').required = (val === 'property');
+                                document.getElementById('target_user_id').required = (val === 'individual');
+                            }
+                        </script>
 
                         <div class="mb-4">
                             <x-input-label for="title" :value="__('Announcement Title')" />
